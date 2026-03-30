@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  ftp:
+    image: stilliard/pure-ftpd:hardened
+    container_name: ftp_server
+    restart: always
+    ports:
+      - "21:21"
+      - "30000-30009:30000-30009"
+    environment:
+      PUBLICHOST: 127.0.0.1
+    volumes:
+      - /f/files:/home/ftpusers
+    command: >
+      /bin/bash -c "
+      useradd -d /home/ftpusers/user -s /bin/bash user &&
+      echo 'user:labds123' | chpasswd &&
+      mkdir -p /home/ftpusers/user &&
+      chown -R user:user /home/ftpusers &&
+      /usr/sbin/pure-ftpd -c 50 -C 5 -l unix -E -j -R -P 127.0.0.1 -p 30000:30009
+      "
+
+  filebrowser:
+    image: filebrowser/filebrowser
+    container_name: filebrowser
+    restart: always
+    user: root
+    ports:
+      - "8081:80"
+    volumes:
+      - /f/files:/srv
+      - ./fb_data:/database  # Mapeamos a PASTA, não o arquivo
+    environment:
+      - FB_DATABASE=/database/filebrowser.db
+      - FB_ROOT=/srv
+      - FB_PORT=80
+      - FB_NOAUTH=false
